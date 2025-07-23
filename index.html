@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Completion Certificate Status Form</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(to right, #dbeafe, #f0f9ff);
+      margin: 0;
+      padding: 0;
+    }
+
+    .container {
+      background: white;
+      max-width: 800px;
+      margin: 40px auto;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    h2 {
+      text-align: center;
+      color: #1d4ed8;
+      margin-bottom: 30px;
+    }
+
+    label {
+      display: block;
+      margin-top: 20px;
+      font-weight: 600;
+      color: #374151;
+    }
+
+    select, textarea, input[type="text"] {
+      width: 100%;
+      padding: 10px;
+      margin-top: 8px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      font-size: 15px;
+      background: #f9fafb;
+    }
+
+    textarea[readonly], input[readonly] {
+      background-color: #f3f4f6;
+      color: #6b7280;
+    }
+
+    button {
+      margin-top: 30px;
+      width: 100%;
+      padding: 14px;
+      background-color: #3b82f6;
+      border: none;
+      border-radius: 8px;
+      color: white;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    button:hover {
+      background-color: #2563eb;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h2>Completion Certificate Status Form</h2>
+
+  <form id="completionForm">
+    <label for="panchayat">Panchayat Name:</label>
+    <select id="panchayat" required>
+      <option value="">-- Select Panchayat --</option>
+    </select>
+
+    <label for="finYear">Work Start Financial Year:</label>
+    <select id="finYear" required>
+      <option value="">-- Select Year --</option>
+    </select>
+
+    <label for="workName">Work Name:</label>
+    <select id="workName" required>
+      <option value="">-- Select Work --</option>
+    </select>
+
+    <label>Current Reason to Not Giving Completion Certificate:</label>
+    <textarea id="currentReason" rows="2" readonly placeholder="Fetched from sheet"></textarea>
+
+    <label>Current Remark:</label>
+    <textarea id="currentRemark" rows="2" readonly placeholder="Fetched from sheet"></textarea>
+
+    <label>New Reason to Not Giving Completion Certificate:</label>
+    <select id="reasonDropdown">
+      <option value="">-- Select Reason --</option>
+      <option value="Work in progress">Work in progress</option>
+      <option value="Pending approval">Pending approval</option>
+      <option value="Fund not received">Fund not received</option>
+      <option value="Other">Other</option>
+    </select>
+
+    <label>New Remark:</label>
+    <textarea id="newRemark" rows="2" placeholder="Type any remark..."></textarea>
+
+    <label>Last Updated On:</label>
+    <input type="text" id="lastUpdated" readonly>
+
+    <button type="submit">Submit</button>
+  </form>
+</div>
+
+<script>
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwHP-ebVRKEMs4QquhM9Zk60RIdiUOihch1BANjtJ6jcAVodfnlBa3_05oqp4kE3rEW9w/exec";
+  const form = document.getElementById("completionForm");
+  const panchayatSelect = document.getElementById("panchayat");
+  const yearSelect = document.getElementById("finYear");
+  const workSelect = document.getElementById("workName");
+
+  const currentReasonBox = document.getElementById("currentReason");
+  const currentRemarkBox = document.getElementById("currentRemark");
+  const lastUpdatedBox = document.getElementById("lastUpdated");
+
+  const reasonDropdown = document.getElementById("reasonDropdown");
+  const newRemarkBox = document.getElementById("newRemark");
+
+  let sheetData = [];
+
+  // Fetch sheet data with logging
+  fetch(SCRIPT_URL + "?type=json")
+    .then(res => {
+      console.log('Fetch status:', res.status, res.statusText);
+      return res.json().catch(err => {
+        console.error('Invalid JSON:', err);
+        throw new Error('Failed to parse JSON from response.');
+      });
+    })
+    .then(rows => {
+      console.log('Fetched rows:', rows);
+      sheetData = rows;
+
+      const panchayatSet = new Set(rows.map(row => row[0]));
+      panchayatSet.forEach(p => {
+        const opt = document.createElement("option");
+        opt.value = p;
+        opt.textContent = p;
+        panchayatSelect.appendChild(opt);
+      });
+    })
+    .catch(error => {
+      console.error('Fetch error:', error);
+      alert("Error loading data. Check browser console (F12).");
+    });
+
+  panchayatSelect.addEventListener("change", () => {
+    const selected = panchayatSelect.value;
+    yearSelect.innerHTML = '<option value="">-- Select Year --</option>';
+    workSelect.innerHTML = '<option value="">-- Select Work --</option>';
+
+    const years = new Set(sheetData
+      .filter(row => row[0] === selected)
+      .map(row => row[1]));
+
+    years.forEach(year => {
+      const opt = document.createElement("option");
+      opt.value = year;
+      opt.textContent = year;
+      yearSelect.appendChild(opt);
+    });
+  });
+
+  yearSelect.addEventListener("change", () => {
+    const selectedPanchayat = panchayatSelect.value;
+    const selectedYear = yearSelect.value;
+    workSelect.innerHTML = '<option value="">-- Select Work --</option>';
+
+    const works = new Set(sheetData
+      .filter(row => row[0] === selectedPanchayat && row[1] === selectedYear)
+      .map(row => row[3]));
+
+    works.forEach(work => {
+      const opt = document.createElement("option");
+      opt.value = work;
+      opt.textContent = work;
+      workSelect.appendChild(opt);
+    });
+  });
+
+  workSelect.addEventListener("change", () => {
+    const panchayat = panchayatSelect.value;
+    const year = yearSelect.value;
+    const work = workSelect.value;
+
+    const match = sheetData.find(
+      row => row[0] === panchayat && row[1] === year && row[3] === work
+    );
+
+    if (match) {
+      currentReasonBox.value = match[4] || "";
+      currentRemarkBox.value = match[5] || "";
+      lastUpdatedBox.value = match[6] || "";
+    } else {
+      currentReasonBox.value = "";
+      currentRemarkBox.value = "";
+      lastUpdatedBox.value = "";
+    }
+  });
+
+  form.addEventListener("submit", function(e) {
+    e.preventDefault();
+
+    const now = new Date().toLocaleString('en-IN');
+
+    const payload = {
+      panchayat: panchayatSelect.value,
+      finYear: yearSelect.value,
+      workName: workSelect.value,
+      updatedReason: reasonDropdown.value,
+      newRemark: newRemarkBox.value,
+      updateDate: now
+    };
+
+    fetch(SCRIPT_URL, {
+      method: "POST",
+      body: JSON.stringify(payload),
+      headers: { "Content-Type": "application/json" }
+    })
+    .then(res => res.text())
+    .then(response => {
+      alert("Submitted successfully!");
+      form.reset();
+      yearSelect.innerHTML = '<option value="">-- Select Year --</option>';
+      workSelect.innerHTML = '<option value="">-- Select Work --</option>';
+      lastUpdatedBox.value = now;
+    })
+    .catch(error => {
+      console.error('Submit error:', error);
+      alert("Error submitting form. See console.");
+    });
+  });
+</script>
+</body>
+</html>
