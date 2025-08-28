@@ -89,13 +89,13 @@
     </select>
 
     <label>Current Reason to Not Giving Completion Certificate:</label>
-    <textarea id="currentReason" rows="2" readonly placeholder="Fetched from sheet"></textarea>
+    <textarea id="currentReason" rows="2" readonly></textarea>
 
     <label>Current Remark:</label>
-    <textarea id="currentRemark" rows="2" readonly placeholder="Fetched from sheet"></textarea>
+    <textarea id="currentRemark" rows="2" readonly></textarea>
 
     <label>New Reason to Not Giving Completion Certificate:</label>
-    <select id="reasonDropdown">
+    <select id="reasonDropdown" required>
       <option value="">-- Select Reason --</option>
       <option value="Work in progress">Work in progress</option>
       <option value="Pending approval">Pending approval</option>
@@ -114,23 +114,22 @@
 </div>
 
 <script>
-  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyFGF-XQB86S0UiUNxvhYXSdlkVVnhpyiwRiSCZOc508rjCzCy5Lex2Hji9E6xtceQCEQ/exec";
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx81f0nINkgQzUaBOzYbblEAFzrv1P69osEXTkGBVhdRRF8Bn0Ku4W5sPUPrHPIh7QaWA/exec"; // replace with your Google Apps Script deployed URL
 
   const form = document.getElementById("completionForm");
   const panchayatSelect = document.getElementById("panchayat");
   const yearSelect = document.getElementById("finYear");
   const workSelect = document.getElementById("workName");
-
   const currentReasonBox = document.getElementById("currentReason");
   const currentRemarkBox = document.getElementById("currentRemark");
   const lastUpdatedBox = document.getElementById("lastUpdated");
-
   const reasonDropdown = document.getElementById("reasonDropdown");
   const newRemarkBox = document.getElementById("newRemark");
 
   let sheetData = [];
 
-  fetch(SCRIPT_URL + "?type=json")
+  // Load data from sheet
+  fetch(SCRIPT_URL + "?action=read")
     .then(res => res.json())
     .then(rows => {
       sheetData = rows;
@@ -142,8 +141,8 @@
         panchayatSelect.appendChild(opt);
       });
     })
-    .catch(error => {
-      console.error('Fetch error:', error);
+    .catch(err => {
+      console.error("Fetch error:", err);
       alert("Error loading data.");
     });
 
@@ -151,33 +150,30 @@
     const selected = panchayatSelect.value;
     yearSelect.innerHTML = '<option value="">-- Select Year --</option>';
     workSelect.innerHTML = '<option value="">-- Select Work --</option>';
-    const years = new Set(sheetData.filter(row => row[0] === selected).map(row => row[1]));
-    years.forEach(year => {
+    const years = new Set(sheetData.filter(r => r[0] === selected).map(r => r[1]));
+    years.forEach(y => {
       const opt = document.createElement("option");
-      opt.value = year;
-      opt.textContent = year;
+      opt.value = y;
+      opt.textContent = y;
       yearSelect.appendChild(opt);
     });
   });
 
   yearSelect.addEventListener("change", () => {
-    const selectedPanchayat = panchayatSelect.value;
-    const selectedYear = yearSelect.value;
+    const p = panchayatSelect.value, y = yearSelect.value;
     workSelect.innerHTML = '<option value="">-- Select Work --</option>';
-    const works = new Set(sheetData
-      .filter(row => row[0] === selectedPanchayat && row[1] === selectedYear)
-      .map(row => row[3]));
-    works.forEach(work => {
+    const works = new Set(sheetData.filter(r => r[0] === p && r[1] === y).map(r => r[3]));
+    works.forEach(w => {
       const opt = document.createElement("option");
-      opt.value = work;
-      opt.textContent = work;
+      opt.value = w;
+      opt.textContent = w;
       workSelect.appendChild(opt);
     });
   });
 
   workSelect.addEventListener("change", () => {
     const p = panchayatSelect.value, y = yearSelect.value, w = workSelect.value;
-    const match = sheetData.find(row => row[0] === p && row[1] === y && row[3] === w);
+    const match = sheetData.find(r => r[0] === p && r[1] === y && r[3] === w);
     if (match) {
       currentReasonBox.value = match[4] || "";
       currentRemarkBox.value = match[5] || "";
@@ -189,10 +185,11 @@
     }
   });
 
-  form.addEventListener("submit", function(e) {
+  form.addEventListener("submit", e => {
     e.preventDefault();
-    const now = new Date().toLocaleString('en-IN');
+    const now = new Date().toLocaleString("en-IN");
     const payload = {
+      action: "update",
       panchayat: panchayatSelect.value,
       finYear: yearSelect.value,
       workName: workSelect.value,
@@ -206,20 +203,16 @@
       body: JSON.stringify(payload),
       headers: { "Content-Type": "application/json" }
     })
-    .then(res => res.text())
-    .then(response => {
-      alert("Submitted successfully!");
-      form.reset();
-      yearSelect.innerHTML = '<option value="">-- Select Year --</option>';
-      workSelect.innerHTML = '<option value="">-- Select Work --</option>';
-      lastUpdatedBox.value = now;
-    })
-    .catch(error => {
-      console.error('Submit error:', error);
-      alert("Error submitting form.");
-    });
+      .then(res => res.text())
+      .then(() => {
+        alert("Submitted successfully!");
+        lastUpdatedBox.value = now;
+      })
+      .catch(err => {
+        console.error("Submit error:", err);
+        alert("Error submitting form.");
+      });
   });
 </script>
 </body>
 </html>
-
