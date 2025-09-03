@@ -4,51 +4,16 @@
   <meta charset="UTF-8">
   <title>Work Status Tracker</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      padding: 20px;
-      background: #f9fafb;
-    }
-    h1 {
-      text-align: center;
-      margin-bottom: 20px;
-      color: #1e3a8a;
-    }
-    .controls {
-      display: flex;
-      justify-content: center;
-      gap: 20px;
-      margin-bottom: 20px;
-    }
-    select, button {
-      padding: 8px;
-      font-size: 1rem;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 20px;
-      background: white;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    }
-    th, td {
-      border: 1px solid #d1d5db;
-      padding: 8px;
-      font-size: 0.95rem;
-      text-align: left;
-    }
-    th {
-      background-color: #2563eb;
-      color: white;
-    }
-    tr:nth-child(even) {
-      background-color: #f3f4f6;
-    }
-    #message {
-      text-align: center;
-      margin-top: 15px;
-      color: #475569;
-    }
+    /* Styles from previous setup */
+    body { font-family: Arial, sans-serif; padding: 20px; background: #f9fafb; }
+    h1 { text-align: center; margin-bottom: 20px; color: #1e3a8a; }
+    .controls { display: flex; justify-content: center; gap: 20px; margin-bottom: 20px; }
+    select, button { padding: 8px; font-size: 1rem; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; background: white; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+    th, td { border: 1px solid #d1d5db; padding: 8px; font-size: 0.95rem; text-align: left; }
+    th { background-color: #2563eb; color: white; }
+    tr:nth-child(even) { background-color: #f3f4f6; }
+    #message { text-align: center; margin-top: 15px; color: #475569; }
   </style>
 </head>
 <body>
@@ -57,20 +22,16 @@
   <div class="controls">
     <label>
       GP:
-      <select id="gp-select">
-        <option value="">-- Select GP --</option>
-      </select>
+      <select id="gp-select"><option value="">-- Select GP --</option></select>
     </label>
     <label>
       Year:
-      <select id="year-select">
-        <option value="">-- Select Year --</option>
-      </select>
+      <select id="year-select"><option value="">-- Select Year --</option></select>
     </label>
     <button id="load-btn">Load Data</button>
   </div>
 
-  <div id="message">Select GP and Year to view data.</div>
+  <div id="message">Loading data...</div>
 
   <table id="data-table" style="display:none;">
     <thead>
@@ -91,104 +52,86 @@
   <script>
     const appId = "9138a83a-c5ec-4d77-9004-93d4c79349db";
     const accessKey = "V2-s5rO2-wAqcC-tNBKd-bDjIr-kxmYA-gxOu5-ivZhJ-TkJet";
-    const tableName = "jOZqB9eIOG4x6_ndWgY9G1"; // your table id
+    const table = "jOZqB9eIOG4x6_ndWgY9G1";
+
+    function getParam(name) {
+      return new URLSearchParams(window.location.search).get(name) || "";
+    }
 
     async function fetchAllData() {
-      const res = await fetch(`https://api.appsheet.com/api/v2/apps/${appId}/tables/${tableName}/Action`, {
+      const res = await fetch(`https://api.appsheet.com/api/v2/apps/${appId}/tables/${table}/Action`, {
         method: "POST",
         headers: {
           "ApplicationAccessKey": accessKey,
           "Content-Type": "application/json"
         },
-        body: JSON.stringify({
-          Action: "Find",
-          Properties: {},
-          Rows: []
-        })
+        body: JSON.stringify({ Action: "Find", Properties: {}, Rows: [] })
       });
       return res.json();
     }
 
     function populateDropdowns(data) {
-      const gpSet = new Set();
-      const yearSet = new Set();
-
-      data.forEach(row => {
-        if (row.Panchayath) gpSet.add(row.Panchayath);
-        if (row.Year) yearSet.add(row.Year);
-      });
-
-      const gpSelect = document.getElementById("gp-select");
-      const yearSelect = document.getElementById("year-select");
-
-      // Clear old options except first
-      gpSelect.length = 1;
-      yearSelect.length = 1;
-
-      [...gpSet].sort().forEach(gp => {
-        gpSelect.add(new Option(gp, gp));
-      });
-
-      [...yearSet].sort().forEach(year => {
-        yearSelect.add(new Option(year, year));
-      });
+      const gpSet = new Set(), yearSet = new Set();
+      data.forEach(r => { if (r.Panchayath) gpSet.add(r.Panchayath); if (r.Year) yearSet.add(r.Year); });
+      const gpSel = document.getElementById("gp-select"), yrSel = document.getElementById("year-select");
+      gpSet.forEach(gp => gpSel.add(new Option(gp, gp)));
+      yearSet.forEach(y => yrSel.add(new Option(y, y)));
     }
 
     function renderTable(data, gp, year) {
       const tbody = document.querySelector("#data-table tbody");
       tbody.innerHTML = "";
-
-      let filtered = data.filter(row => row.Panchayath === gp && row.Year == year);
-
+      const filtered = data.filter(r => r.Panchayath === gp && r.Year == year);
       if (!filtered.length) {
-        document.getElementById("message").textContent = "No data found for selected GP and Year.";
+        document.getElementById("message").textContent = "No data found.";
         document.getElementById("data-table").style.display = "none";
         return;
       }
-
-      filtered.forEach((row, index) => {
-        let tr = document.createElement("tr");
+      filtered.forEach((r, i) => {
+        const tr = document.createElement("tr");
         tr.innerHTML = `
-          <td>${index + 1}</td>
-          <td>${row.Panchayath || ""}</td>
-          <td>${row.Year || ""}</td>
-          <td>${row.WorkName || ""}</td>
-          <td>${row.Reason || ""}</td>
-          <td>${row.Remark || ""}</td>
-          <td>${row.NewReason || ""}</td>
-          <td>${row.NewRemark || ""}</td>
-        `;
+          <td>${i+1}</td>
+          <td>${r.Panchayath||""}</td>
+          <td>${r.Year||""}</td>
+          <td>${r.WorkName||""}</td>
+          <td>${r.Reason||""}</td>
+          <td>${r.Remark||""}</td>
+          <td>${r.NewReason||""}</td>
+          <td>${r.NewRemark||""}</td>`;
         tbody.appendChild(tr);
       });
-
       document.getElementById("message").textContent = "";
       document.getElementById("data-table").style.display = "table";
     }
 
-    async function init() {
-      document.getElementById("message").textContent = "Loading dropdowns...";
+    window.onload = async () => {
       try {
         const allData = await fetchAllData();
         populateDropdowns(allData);
-
+        document.getElementById("message").textContent = "Select GP and Year.";
+        
         document.getElementById("load-btn").onclick = () => {
           const gp = document.getElementById("gp-select").value;
-          const year = document.getElementById("year-select").value;
-          if (!gp || !year) {
-            document.getElementById("message").textContent = "Please select both GP and Year.";
+          const yr = document.getElementById("year-select").value;
+          if (!gp || !yr) {
+            document.getElementById("message").textContent = "Select both GP and Year.";
             return;
           }
-          renderTable(allData, gp, year);
+          renderTable(allData, gp, yr);
+          history.replaceState(null, '', `?gp=${encodeURIComponent(gp)}&year=${encodeURIComponent(yr)}`);
         };
 
-        document.getElementById("message").textContent = "Select GP and Year to view data.";
-      } catch (err) {
-        console.error(err);
-        document.getElementById("message").textContent = "⚠️ Failed to load data from AppSheet.";
+        const gpParam = getParam("gp"), yrParam = getParam("year");
+        if (gpParam && yrParam) {
+          document.getElementById("gp-select").value = gpParam;
+          document.getElementById("year-select").value = yrParam;
+          renderTable(allData, gpParam, yrParam);
+        }
+      } catch (e) {
+        console.error(e);
+        document.getElementById("message").textContent = "Failed to load data.";
       }
-    }
-
-    window.onload = init;
+    };
   </script>
 </body>
 </html>
