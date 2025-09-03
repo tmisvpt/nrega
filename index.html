@@ -2,126 +2,56 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Work Status via AppSheet</title>
+  <title>NREGA Completion Certificate Tracker</title>
   <style>
-    body { font-family: Arial, sans-serif; padding: 20px; }
-    .filters { text-align: right; margin-bottom: 10px; }
-    select, input[type="text"] { padding: 5px; margin: 0 5px; }
-    table { width:100%; border-collapse: collapse; margin-top:10px; }
-    th,td { border:1px solid #ccc; padding:8px; }
-    th { background:#f2f2f2; }
-    button { margin-top:10px; padding:8px 16px; }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0;
+      padding: 0;
+      background: linear-gradient(to right, #dbeafe, #f0f9ff);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      background: #2563eb;
+      color: white;
+      padding: 15px;
+      text-align: center;
+      font-size: 1.4rem;
+      font-weight: bold;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    }
+
+    iframe {
+      flex: 1;
+      border: none;
+      width: 100%;
+    }
+
+    footer {
+      text-align: center;
+      padding: 10px;
+      background: #f1f5f9;
+      font-size: 0.9rem;
+      color: #475569;
+      border-top: 1px solid #e2e8f0;
+    }
   </style>
 </head>
 <body>
-  <h2>Work Status Tracker</h2>
-  <div class="filters">
-    GP: <select id="gpFilter"><option value="">--Select--</option></select>
-    Year: <select id="yearFilter"><option value="">--Select--</option></select>
-  </div>
+  <header>
+    Completion Certificate Status Form
+  </header>
 
-  <form id="updateForm">
-    <table id="dataTable">
-      <thead>
-        <tr>
-          <th>Sl No</th><th>Work Name</th><th>Reason</th><th>Remark</th>
-          <th>New Reason</th><th>New Remark</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-    <button type="submit">Submit Updates</button>
-  </form>
+  <!-- Embedded AppSheet App -->
+  <iframe src="https://www.appsheet.com/start/9138a83a-c5ec-4d77-9004-93d4c79349db?refresh=1&wipe=1"
+          allowfullscreen>
+  </iframe>
 
-<script>
-const APP_ID = 'YOUR_APP_ID';
-const ACCESS_KEY = 'YOUR_ACCESS_KEY';
-const TABLE_NAME = 'jOZqB9eIOG4x6_ndWgY9G1';
-
-async function fetchData() {
-  const body = {
-    Action: "Find",
-    Properties: {},
-    Rows: []
-  };
-  const res = await fetch(`https://api.appsheet.com/api/v2/apps/${APP_ID}/tables/${TABLE_NAME}/Action`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'ApplicationAccessKey': ACCESS_KEY
-    },
-    body: JSON.stringify(body)
-  });
-  return res.json();
-}
-
-let rowsData = [];
-fetchData().then(json => {
-  rowsData = json.rows || [];
-  populateFilters();
-});
-
-function populateFilters(){
-  const gps = [...new Set(rowsData.map(r => r.GP))];
-  const years = [...new Set(rowsData.map(r => r.Year))];
-  const gpFilter = document.getElementById('gpFilter');
-  const yearFilter = document.getElementById('yearFilter');
-  gps.forEach(g => gpFilter.innerHTML += `<option>${g}</option>`);
-  years.forEach(y => yearFilter.innerHTML += `<option>${y}</option>`);
-  gpFilter.onchange = yearFilter.onchange = renderTable;
-}
-
-function renderTable(){
-  const gp = document.getElementById('gpFilter').value;
-  const yr = document.getElementById('yearFilter').value;
-  const tbody = document.querySelector('#dataTable tbody');
-  tbody.innerHTML = '';
-  rowsData.filter(r => (!gp || r.GP === gp) && (!yr || r.Year == yr))
-    .forEach((r, idx) => {
-      tbody.innerHTML += `
-        <tr data-key="${r._RowNumber}">
-          <td>${idx+1}</td>
-          <td>${r.WorkName}</td>
-          <td>${r.Reason}</td>
-          <td>${r.Remark}</td>
-          <td><input type="text" name="newReason"></td>
-          <td><input type="text" name="newRemark"></td>
-        </tr>`;
-    });
-}
-
-document.getElementById('updateForm').addEventListener('submit', async e => {
-  e.preventDefault();
-  const promises = [];
-  document.querySelectorAll('#dataTable tbody tr').forEach(tr => {
-    const newReason = tr.querySelector('input[name=newReason]').value.trim();
-    const newRemark = tr.querySelector('input[name=newRemark]').value.trim();
-    if (newReason || newRemark) {
-      const key = tr.dataset.key;
-      const payload = {
-        Action: "Edit",
-        Properties: {},
-        Rows: [{
-          _RowNumber: key,
-          NewReason: newReason || undefined,
-          NewRemark: newRemark || undefined
-        }]
-      };
-      promises.push(fetch(`https://api.appsheet.com/api/v2/apps/${APP_ID}/tables/${TABLE_NAME}/Action`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'ApplicationAccessKey': ACCESS_KEY
-        },
-        body: JSON.stringify(payload)
-      }));
-    }
-  });
-  await Promise.all(promises);
-  alert('Updates sent');
-  fetchData().then(() => renderTable());
-});
-
-</script>
+  <footer>
+    Powered by AppSheet & NREGA Tracker
+  </footer>
 </body>
 </html>
