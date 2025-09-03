@@ -1,57 +1,108 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>NREGA Completion Certificate Tracker</title>
+  <meta charset="UTF-8" />
+  <title>Work Status Tracker</title>
   <style>
     body {
-      font-family: 'Segoe UI', sans-serif;
-      margin: 0;
-      padding: 0;
-      background: linear-gradient(to right, #dbeafe, #f0f9ff);
-      height: 100vh;
-      display: flex;
-      flex-direction: column;
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background: #fafafa;
     }
-
     header {
-      background: #2563eb;
-      color: white;
-      padding: 15px;
-      text-align: center;
-      font-size: 1.4rem;
+      margin-bottom: 15px;
+      font-size: 1.5rem;
       font-weight: bold;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-    }
-
-    iframe {
-      flex: 1;
-      border: none;
-      width: 100%;
-    }
-
-    footer {
       text-align: center;
-      padding: 10px;
-      background: #f1f5f9;
-      font-size: 0.9rem;
-      color: #475569;
-      border-top: 1px solid #e2e8f0;
+    }
+    .form-container {
+      max-width: 600px;
+      margin: 0 auto 30px;
+      background: #fff;
+      padding: 20px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    .form-container label {
+      margin: 0 10px 0 0;
+      font-weight: 500;
+    }
+    .form-container select {
+      margin-right: 20px;
+      padding: 6px 10px;
+      font-size: 1rem;
+    }
+    .form-container table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    .form-container th,
+    .form-container td {
+      padding: 8px;
+      border: 1px solid #ccc;
+      text-align: left;
+      font-size: 0.95rem;
+    }
+    .form-container input[type="submit"] {
+      margin-top: 15px;
+      padding: 8px 16px;
+      font-size: 1rem;
+      background: #2563eb;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    iframe {
+      width: 100%;
+      height: 600px;
+      border: none;
+      margin-top: 40px;
     }
   </style>
 </head>
 <body>
-  <header>
-    Completion Certificate Status Form
-  </header>
+  <header>Work Status Tracker</header>
 
-  <!-- Embedded AppSheet App -->
+  <div class="form-container">
+    <form>
+      <label for="gp">GP:</label>
+      <select id="gp" name="gp">
+        <option>--Select--</option>
+        <!-- Add your GP options here -->
+      </select>
+
+      <label for="year">Year:</label>
+      <select id="year" name="year">
+        <option>--Select--</option>
+        <!-- Add your Year options here -->
+      </select>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Sl No</th>
+            <th>Work Name</th>
+            <th>Reason</th>
+            <th>Remark</th>
+            <th>New Reason</th>
+            <th>New Remark</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Rows to be dynamically populated -->
+        </tbody>
+      </table>
+
+      <input type="submit" value="Submit Updates" />
+    </form>
+  </div>
+
+  <!-- Embed the AppSheet app -->
   <iframe src="https://www.appsheet.com/start/9138a83a-c5ec-4d77-9004-93d4c79349db?refresh=1&wipe=1"
           allowfullscreen>
   </iframe>
-
-  <footer>
-    Powered by AppSheet & NREGA Tracker
-  </footer>
 </body>
 </html>
